@@ -1,0 +1,21 @@
+{#- Copyright (c) 2025-2026, NVIDIA CORPORATION. SPDX-License-Identifier: Apache-2.0 -#}
+{%- for message in messages -%}
+{%- if message['role'] == 'system' -%}
+{{- '<SPECIAL_10>System
+' + message['content'] + '
+' -}}
+{%- elif message['role'] == 'user' -%}
+{{- '<SPECIAL_11>User
+' + message['content'] + '
+' -}}
+{%- elif message['role'] == 'assistant' -%}
+{{- '<SPECIAL_11>Assistant
+' -}}{% generation %}{{- message['content'] + '
+<SPECIAL_12>
+' -}}{% endgeneration %}
+{%- endif -%}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+{{- '<SPECIAL_11>Assistant
+' -}}{% generation %}{% endgeneration %}
+{%- endif -%}

@@ -1,20 +1,30 @@
-## Security
+# Security
 
-NVIDIA is dedicated to the security and trust of our software products and services, including all source code repositories managed through our organization.
+NVIDIA is dedicated to the security and trust of its software products and
+services, including source code repositories managed through our organization.
 
-If you need to report a security issue, use the contact points below. **Do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.** If a potential security issue is disclosed publicly, NVIDIA maintainers may limit public discussion and redirect the reporter to the private reporting channels.
+Please do not report security vulnerabilities through GitHub, GitLab, or other
+public project channels.
 
-## Reporting a potential security vulnerability in an NVIDIA product
+## Reporting a Potential Security Vulnerability
 
 To report a potential security vulnerability in an NVIDIA product:
 
-- Web: [Report a Security Vulnerability or NVIDIA AI Concern](https://www.nvidia.com/en-us/security/report-vulnerability/)
-- Email: [psirt@nvidia.com](mailto:psirt@nvidia.com)
-  - NVIDIA encourages encryption with its [public PGP key](https://www.nvidia.com/en-us/security/pgp-key/).
-  - Include the affected product or driver and its version or branch, the type of vulnerability, reproduction instructions, proof-of-concept or exploit code when available, and the potential impact.
+- Web: [NVIDIA Security Vulnerability Submission Form](https://www.nvidia.com/object/submit-security-vulnerability.html)
+- Email: `psirt@nvidia.com`
+- Secure communication: [NVIDIA public PGP key](https://www.nvidia.com/en-us/security/pgp-key)
 
-NVIDIA follows a coordinated vulnerability disclosure process. See the [NVIDIA PSIRT policies](https://www.nvidia.com/en-us/security/psirt-policies/) for details.
+Include:
 
-## NVIDIA Product Security
+- The affected product, version, or branch.
+- The type of vulnerability.
+- Reproduction instructions.
+- Proof-of-concept or exploit code, if available.
+- The potential impact and likely exploitation path.
 
-For security bulletins, policies, acknowledgements, and reporting resources, visit the [NVIDIA Product Security portal](https://www.nvidia.com/en-us/product-security/).
+See the [NVIDIA PSIRT policies](https://www.nvidia.com/en-us/security/psirt-policies/)
+and [NVIDIA Product Security portal](https://www.nvidia.com/en-us/security/) for
+additional information.
+
+Do not attach private, customer, training, model, or dataset content to public
+issues, pull requests, logs, or generated artifacts.

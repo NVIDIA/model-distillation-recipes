@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "model-distillation-recipes"
+version = "0.1.0"
+description = "Reference PyTorch recipes for LoRA fine-tuning and knowledge distillation with FSDP2"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = []
+
+[project.optional-dependencies]
+runtime = [
+    "accelerate",
+    "datasets",
+    "peft",
+    "torch>=2.4",
+    "transformers>=5.6.0",
+]
+dev = [
+    "accelerate",
+    "datasets",
+    "peft",
+    "pytest>=7",
+    "ruff",
+    "torch>=2.4",
+    "transformers>=5.6.0",
+]
+logging = [
+    "wandb",
+]
+mamba = [
+    "causal-conv1d>=1.4.0",
+    "mamba-ssm>=2.2.4",
+    "ninja",
+]
+flash-attn = [
+    "flash-attn",
+]
+
+[tool.setuptools]
+packages = []
+py-modules = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "gpu: requires one or more CUDA-capable GPUs",
+    "distributed: launches or requires multiple processes",
+    "slow: takes substantially longer than the default CPU suite",
+    "requires_model: requires model weights or tokenizer assets",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.format]
+quote-style = "preserve"
