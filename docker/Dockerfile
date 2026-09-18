@@ -15,10 +15,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN python -m venv --system-site-packages /opt/composite-venv \
     && /opt/composite-venv/bin/python -m pip install \
-       "wandb" "datasets" "transformers>=5.6.0" \
-    && /opt/composite-venv/bin/python -m pip install --no-deps "peft" "accelerate" \
+       "wandb==0.30.0" "datasets==5.0.1" "transformers>=5.6.0" \
+    && /opt/composite-venv/bin/python -m pip install --no-deps \
+       "peft==0.21.0" "accelerate==1.15.0" \
     && if [ "${INSTALL_MAMBA_KERNELS}" = "1" ]; then \
-           /opt/composite-venv/bin/python -m pip install "ninja" \
+           /opt/composite-venv/bin/python -m pip install "ninja==1.13.2" \
            && CAUSAL_CONV1D_FORCE_BUILD=TRUE CAUSAL_CONV1D_SKIP_CUDA_BUILD=FALSE \
                /opt/composite-venv/bin/python -m pip install --no-deps --no-build-isolation \
                "causal-conv1d>=1.4.0" \

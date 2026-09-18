@@ -24,31 +24,31 @@ dependencies = []
 
 [project.optional-dependencies]
 runtime = [
-    "accelerate",
-    "datasets",
-    "peft",
+    "accelerate==1.15.0",
+    "datasets==5.0.1",
+    "peft==0.21.0",
     "torch>=2.4",
     "transformers>=5.6.0",
 ]
 dev = [
-    "accelerate",
-    "datasets",
-    "peft",
+    "accelerate==1.15.0",
+    "datasets==5.0.1",
+    "peft==0.21.0",
     "pytest>=7",
     "ruff",
     "torch>=2.4",
     "transformers>=5.6.0",
 ]
 logging = [
-    "wandb",
+    "wandb==0.30.0",
 ]
 mamba = [
     "causal-conv1d>=1.4.0",
     "mamba-ssm>=2.2.4",
-    "ninja",
+    "ninja==1.13.2",
 ]
 flash-attn = [
-    "flash-attn",
+    "flash-attn==2.8.3.post1",
 ]
 
 [tool.setuptools]
