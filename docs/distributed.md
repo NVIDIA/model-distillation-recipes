@@ -59,15 +59,27 @@ size. Similar-looking tokenizer names are not sufficient; the training script
 compares the vocabularies before sharding.
 
 Global batch size is the product of per-device batch size, world size, and
-gradient-accumulation steps. Keep that effective batch size constant when
-comparing world sizes.
+gradient-accumulation steps. `--gbs` must be exactly divisible by per-device
+batch size times world size. If `--gbs` and
+`--gradient_accumulation_steps` are both supplied, they must describe the same
+effective batch size. Keep that effective batch size constant when comparing
+world sizes.
+
+Both recipes default to seed `1234` for model initialization and data
+shuffling. Pass `--seed` explicitly and record it for reproducible launches.
 
 ## Checkpoints and shutdown
 
-Intermediate distillation checkpoints use PyTorch Distributed Checkpoint (DCP)
-under `OUTPUT_DIR/dcp/step_<step>` and contain sharded model and optimizer state.
-Resume them with the same compatible model and distributed topology using
-`--dcp_resume_path`.
+Intermediate distillation and LoRA checkpoints use PyTorch Distributed
+Checkpoint (DCP) under `OUTPUT_DIR/dcp/step_<step>` and contain sharded model,
+optimizer, and completed-step state. Resume them with the same compatible model
+and distributed topology using `--dcp_resume_path`.
+
+On resume, `--max_steps` remains the original total step target, not the number
+of additional steps. Pass the original schedule arguments so learning-rate
+warmup and decay continue from the restored completed step. Resume does not
+restore the dataloader cursor or sampler epoch; data iteration restarts from
+sampler epoch zero.
 
 Final distillation export gathers a Hugging Face safetensors checkpoint to CPU
 on rank zero. Final LoRA export gathers and writes a PEFT adapter and tokenizer.

@@ -44,17 +44,21 @@ from fsdp2_common import (
     fsdp2_wrap,
     init_wandb,
     is_main_process,
+    load_dcp_checkpoint,
     log_train_step,
     make_chat_dataloader,
     masked_mean,
     next_batch,
+    positive_int,
     rank0_print,
     reduce_mean_scalar,
     resolve_grad_accum,
     resolve_layer_cls,
     resolve_think_token_ids,
+    save_dcp_checkpoint,
     setup_tokenizer,
     unit_interval_float,
+    validate_resume_step,
 )
 from peft import LoraConfig, TaskType, get_peft_model
 from transformers import AutoModelForCausalLM
@@ -146,7 +150,8 @@ def get_args(argv=None):
     p.add_argument("--weight_decay", type=float, default=0.0)
     p.add_argument("--max_grad_norm", type=float, default=1.0)
 
-    p.add_argument("--save_steps", type=int, default=None)
+    p.add_argument("--save_steps", type=positive_int, default=None)
+    p.add_argument("--dcp_resume_path", type=str, default=None)
     p.add_argument("--logging_steps", type=int, default=10)
     p.add_argument("--wandb_project", type=str, default=None)
     p.add_argument("--wandb_entity", type=str, default=None)
@@ -171,7 +176,7 @@ def main():
         world_size,
         explicit=args.gradient_accumulation_steps,
     )
-    global_batch_size = args.gbs or (args.per_device_train_batch_size * world_size * grad_accum)
+    global_batch_size = args.per_device_train_batch_size * world_size * grad_accum
     rank0_print(f"grad_accum={grad_accum}")
 
     use_wandb = init_wandb(args)
@@ -225,11 +230,17 @@ def main():
         weight_decay=args.weight_decay,
     )
 
-    model.train()
     step = 0
+    if args.dcp_resume_path:
+        step = validate_resume_step(
+            load_dcp_checkpoint(model, optimizer, args.dcp_resume_path),
+            args.max_steps,
+        )
+
+    model.train()
     data_iter = iter(loader)
     epoch = 0
-    rank0_print(f"Starting LoRA training for {args.max_steps} steps")
+    rank0_print(f"Starting LoRA training at completed step {step} of {args.max_steps}")
 
     while step < args.max_steps:
         lr = cosine_lr(step, args.warmup_steps, args.max_steps, args.lr, args.min_lr)
@@ -282,6 +293,9 @@ def main():
             global_batch_size=global_batch_size,
             logging_steps=args.logging_steps,
         )
+
+        if args.save_steps and step % args.save_steps == 0 and step < args.max_steps:
+            save_dcp_checkpoint(model, optimizer, step, os.path.join(args.output_dir, "dcp"))
 
     rank0_print("Training complete. Saving LoRA adapter...")
     save_lora_adapter(model, tokenizer, args.output_dir)

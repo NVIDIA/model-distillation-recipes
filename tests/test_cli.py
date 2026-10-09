@@ -1,4 +1,4 @@
-# Copyright (c) 2025-2026, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 import distill_fsdp2
@@ -24,6 +24,7 @@ def test_distillation_defaults_to_kd_only():
     assert args.use_lm_loss is False
     assert args.blended_loss_weight is None
     assert args.attn_implementation == "sdpa"
+    assert args.seed == 1234
 
 
 def test_lora_accepts_model_specific_launch_options():
@@ -42,10 +43,14 @@ def test_lora_accepts_model_specific_launch_options():
             "--lora_target_modules",
             "in_proj",
             "out_proj",
+            "--dcp_resume_path",
+            "checkpoint",
         ]
     )
     assert args.attn_implementation == "sdpa"
     assert args.lora_target_modules == ["in_proj", "out_proj"]
+    assert args.dcp_resume_path == "checkpoint"
+    assert args.seed == 1234
 
 
 @pytest.mark.parametrize("module", [distill_fsdp2, lora_fsdp2])
@@ -59,6 +64,33 @@ def test_cli_rejects_invalid_blended_loss_weight(module):
         "1",
         "--blended_loss_weight",
         "1.5",
+    ]
+    if module is distill_fsdp2:
+        required = [
+            "--student_path",
+            "student",
+            "--teacher_path",
+            "teacher",
+            *required,
+        ]
+    else:
+        required = ["--model_path", "model", *required]
+
+    with pytest.raises(SystemExit):
+        module.get_args(required)
+
+
+@pytest.mark.parametrize("module", [distill_fsdp2, lora_fsdp2])
+def test_cli_rejects_non_positive_save_steps(module):
+    required = [
+        "--data_path",
+        "data.jsonl",
+        "--output_dir",
+        "output",
+        "--max_steps",
+        "1",
+        "--save_steps",
+        "0",
     ]
     if module is distill_fsdp2:
         required = [

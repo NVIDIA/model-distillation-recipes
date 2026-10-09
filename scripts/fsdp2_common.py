@@ -69,6 +69,14 @@ def unit_interval_float(value):
     return parsed
 
 
+def positive_int(value):
+    """Parse a strictly positive integer CLI value."""
+    parsed = int(value)
+    if parsed <= 0:
+        raise ValueError(f"expected a positive integer, got {value!r}")
+    return parsed
+
+
 def validate_tokenizer_compatibility(student_tokenizer, teacher_tokenizer):
     """Require identical token IDs for logit-level distillation."""
     student_vocab = student_tokenizer.get_vocab()
@@ -417,7 +425,7 @@ def save_dcp_checkpoint(model, optimizer, step, ckpt_dir):
     from torch.distributed.checkpoint.state_dict import get_state_dict
 
     model_sd, optim_sd = get_state_dict(model, optimizer)
-    state = {"model": model_sd, "optim": optim_sd, "step": step}
+    state = {"model": model_sd, "optim": optim_sd, "step": int(step)}
     path = os.path.join(ckpt_dir, f"step_{step}")
     dcp.save(state, checkpoint_id=path)
     rank0_print(f"[ckpt] Saved DCP checkpoint to {path}")
@@ -425,17 +433,38 @@ def save_dcp_checkpoint(model, optimizer, step, ckpt_dir):
 
 
 def load_dcp_checkpoint(model, optimizer, path):
-    """Restore model+optimizer from a Distributed Checkpoint."""
+    """Restore model, optimizer, and completed-step count from a DCP checkpoint."""
     import torch.distributed.checkpoint as dcp
     from torch.distributed.checkpoint.state_dict import get_state_dict, set_state_dict
 
     model_sd, optim_sd = get_state_dict(model, optimizer)
-    state = {"model": model_sd, "optim": optim_sd}
+    # DCP only loads keys present in the destination state. Include a scalar
+    # placeholder so the completed-step record written by save_dcp_checkpoint
+    # is restored instead of silently ignored.
+    state = {"model": model_sd, "optim": optim_sd, "step": 0}
     dcp.load(state, checkpoint_id=path)
     set_state_dict(
         model, optimizer, model_state_dict=state["model"], optim_state_dict=state["optim"]
     )
-    rank0_print(f"[ckpt] Loaded DCP checkpoint from {path}")
+    step = int(state["step"])
+    if step < 0:
+        raise ValueError(f"Checkpoint completed step must be non-negative, got {step}")
+    rank0_print(f"[ckpt] Loaded DCP checkpoint from {path} at completed step {step}")
+    return step
+
+
+def validate_resume_step(step, max_steps):
+    """Validate a completed checkpoint step against the run's total step target."""
+    step = int(step)
+    max_steps = int(max_steps)
+    if step < 0:
+        raise ValueError(f"Checkpoint completed step must be non-negative, got {step}")
+    if step > max_steps:
+        raise ValueError(
+            f"Checkpoint completed step {step} exceeds --max_steps {max_steps}; "
+            "pass the original total step target when resuming"
+        )
+    return step
 
 
 def save_hf_checkpoint(model, tokenizer, output_dir):
@@ -514,10 +543,30 @@ def make_chat_dataloader(
 
 
 def resolve_grad_accum(gbs, mbs, world_size, explicit=None):
+    if mbs <= 0:
+        raise ValueError(f"per-device batch size must be positive, got {mbs}")
+    if world_size <= 0:
+        raise ValueError(f"world size must be positive, got {world_size}")
+    if gbs is not None and gbs <= 0:
+        raise ValueError(f"global batch size must be positive, got {gbs}")
     if explicit is not None:
-        return max(1, explicit)
+        if explicit <= 0:
+            raise ValueError(f"gradient accumulation steps must be positive, got {explicit}")
+        effective = mbs * world_size * explicit
+        if gbs is not None and gbs != effective:
+            raise ValueError(
+                f"--gbs {gbs} conflicts with --gradient_accumulation_steps {explicit}; "
+                f"effective global batch size is {effective}"
+            )
+        return explicit
     if gbs is not None:
-        return max(1, gbs // (mbs * world_size))
+        per_microbatch = mbs * world_size
+        if gbs % per_microbatch:
+            raise ValueError(
+                f"--gbs {gbs} is not divisible by per_device_train_batch_size × "
+                f"world_size ({mbs} × {world_size} = {per_microbatch})"
+            )
+        return gbs // per_microbatch
     return 1
 
 

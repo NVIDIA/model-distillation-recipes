@@ -43,10 +43,12 @@ from fsdp2_common import (
     finish_wandb,
     fsdp2_wrap,
     init_wandb,
+    load_dcp_checkpoint,
     log_train_step,
     make_chat_dataloader,
     masked_mean,
     next_batch,
+    positive_int,
     rank0_print,
     reduce_mean_scalar,
     resolve_grad_accum,
@@ -57,6 +59,7 @@ from fsdp2_common import (
     setup_tokenizer,
     unit_interval_float,
     validate_distillation_compatibility,
+    validate_resume_step,
     validate_tokenizer_compatibility,
     weighted_reduce,
 )
@@ -67,8 +70,6 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-DEFAULT_SEED_POOL = [42, 1337, 2024, 7, 31415]
 
 
 def kd_kl_per_token(student_logits, teacher_logits, temperature):
@@ -145,7 +146,7 @@ def get_args(argv=None):
     p.add_argument("--max_grad_norm", type=float, default=1.0)
 
     # Checkpointing
-    p.add_argument("--save_steps", type=int, default=None)
+    p.add_argument("--save_steps", type=positive_int, default=None)
     p.add_argument("--dcp_resume_path", type=str, default=None)
 
     # Logging
@@ -155,7 +156,7 @@ def get_args(argv=None):
     p.add_argument("--wandb_name", type=str, default=None)
     p.add_argument("--wandb_tags", nargs="+", default=None)
 
-    p.add_argument("--seed", type=int, default=None)
+    p.add_argument("--seed", type=int, default=1234)
     return p.parse_args(argv)
 
 
@@ -169,8 +170,6 @@ def main():
     rank, local_rank, world_size = dist_setup()
     device = torch.device(f"cuda:{local_rank}")
 
-    if args.seed is None:
-        args.seed = DEFAULT_SEED_POOL[0]
     torch.manual_seed(args.seed)
     random.seed(args.seed)
 
@@ -180,7 +179,7 @@ def main():
         world_size,
         explicit=args.gradient_accumulation_steps,
     )
-    global_batch_size = args.gbs or (args.per_device_train_batch_size * world_size * grad_accum)
+    global_batch_size = args.per_device_train_batch_size * world_size * grad_accum
     rank0_print(
         f"grad_accum={grad_accum} (gbs={args.gbs}, mbs={args.per_device_train_batch_size}, world={world_size})"
     )
@@ -243,16 +242,17 @@ def main():
         weight_decay=args.weight_decay,
     )
 
+    step = 0
     if args.dcp_resume_path:
-        from fsdp2_common import load_dcp_checkpoint
-
-        load_dcp_checkpoint(student, optimizer, args.dcp_resume_path)
+        step = validate_resume_step(
+            load_dcp_checkpoint(student, optimizer, args.dcp_resume_path),
+            args.max_steps,
+        )
 
     student.train()
-    step = 0
     data_iter = iter(loader)
     epoch = 0
-    rank0_print(f"Starting training for {args.max_steps} steps")
+    rank0_print(f"Starting training at completed step {step} of {args.max_steps}")
 
     while step < args.max_steps:
         lr = cosine_lr(step, args.warmup_steps, args.max_steps, args.lr, args.min_lr)

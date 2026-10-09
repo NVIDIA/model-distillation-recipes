@@ -179,6 +179,7 @@ gates. See [docs/reproducibility.md](docs/reproducibility.md).
 ## Project documentation
 
 - [Distributed execution](docs/distributed.md)
+- [GPU validation checklist](docs/gpu_validation.md)
 - [Data format](docs/data_format.md)
 - [Reproducibility](docs/reproducibility.md)
 - [Source provenance](docs/provenance.md)
