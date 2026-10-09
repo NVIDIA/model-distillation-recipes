@@ -1,10 +1,22 @@
 # Third-Party Notices
 
 Model Distillation Recipes does not intentionally vendor third-party library
-source code. Compatibility templates require the separate provenance review
-documented in `docs/provenance.md`. The source repository declares the following
-direct build, development, runtime, and optional dependencies in
-`pyproject.toml`; they are installed separately under their respective licenses:
+source code. One compatibility template contains adapted third-party material
+as documented below.
+
+## Adapted Qwen3 Chat Template
+
+`configs/chat_template_qwen3_generation.jinja` is adapted from the
+[Qwen3-4B-Instruct-2507 tokenizer configuration at `cdbee75f`][qwen-template].
+The source is Copyright 2024 Alibaba Cloud and licensed under Apache-2.0.
+NVIDIA's modifications are also distributed under Apache-2.0; the license text
+is provided in `LICENSE`.
+
+## Separately Installed Dependencies
+
+The source repository declares the following direct build, development,
+runtime, and optional dependencies in `pyproject.toml`; they are installed
+separately under their respective licenses:
 
 - [`setuptools`](https://github.com/pypa/setuptools) — MIT.
 - [`accelerate`](https://github.com/huggingface/accelerate) — Apache-2.0.
@@ -45,3 +57,5 @@ NVIDIA NGC access and use are also subject to the applicable NGC terms.
 
 Models, model weights, tokenizers, datasets, and generated artifacts are not
 included in this notice and remain subject to their own licenses and terms.
+
+[qwen-template]: https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507/blob/cdbee75f17c01a7cc42f958dc650907174af0554/tokenizer_config.json
