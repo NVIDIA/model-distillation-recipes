@@ -1,7 +1,7 @@
 # Model Distillation Recipes
 
-Reference PyTorch recipes for LoRA supervised fine-tuning and logit-level
-knowledge distillation with FSDP2. The code is intentionally small and direct:
+Reference PyTorch recipes for LoRA supervised fine-tuning and logit-based
+knowledge distillation with FSDP2. The code is intentionally compact:
 Hugging Face models, PEFT adapters, `torch.distributed`, and explicit training
 loops without a trainer framework.
 
@@ -112,7 +112,7 @@ torchrun --standalone --nproc_per_node 4 scripts/distill_fsdp2.py \
   --max_steps 100
 ```
 
-The teacher is frozen. Per-token KD is temperature-softened KL divergence:
+The teacher is frozen, only the student weights get updates. Per-token KD is trained using a loss defined as temperature-softened KL divergence:
 
 ```text
 kd = T^2 * KL(softmax(teacher / T) || log_softmax(student / T))
