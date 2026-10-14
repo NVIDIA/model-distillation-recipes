@@ -18,6 +18,8 @@ CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
 )
 def test_chat_template_marks_assistant_generation(template_name):
     template = (CONFIG_DIR / template_name).read_text(encoding="utf-8")
+    assert "\nSPDX-FileCopyrightText: " in template
+    assert "\nSPDX-License-Identifier: Apache-2.0\n" in template
     assert "{% generation %}" in template
     assert "{% endgeneration %}" in template
     assert "assistant" in template.lower()
