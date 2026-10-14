@@ -1,7 +1,9 @@
-{#- Copyright 2024 Alibaba Cloud -#}
-{#- Copyright (c) 2025-2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved. -#}
-{#- Adapted and modified by NVIDIA from the Qwen3 tokenizer chat template. -#}
-{#- SPDX-License-Identifier: Apache-2.0 -#}
+{#-
+SPDX-FileCopyrightText: Copyright 2024 Alibaba Cloud
+SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Adapted and modified by NVIDIA from the Qwen3 tokenizer chat template.
+SPDX-License-Identifier: Apache-2.0
+-#}
 {%- for message in messages %}<|im_start|>{{ message['role'] }}
 {% if message['role'] == 'assistant' %}{% generation %}{{ message['content'] }}<|im_end|>
 {% endgeneration %}{% else %}{{ message['content'] }}<|im_end|>
